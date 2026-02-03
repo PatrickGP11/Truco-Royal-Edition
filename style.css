@@ -21,7 +21,9 @@
 
 body {
     margin: 0;
+    /* Correção para Mobile: usa 100dvh para ignorar barras do navegador */
     height: 100vh;
+    height: 100dvh;
     background: #111;
     display: flex;
     justify-content: center;
@@ -30,7 +32,7 @@ body {
     overflow: hidden;
 }
 
-/* --- TELA INICIAL (NOVO) --- */
+/* --- TELA INICIAL --- */
 .start-overlay {
     position: fixed;
     top: 0;
@@ -39,7 +41,6 @@ body {
     height: 100%;
     background: radial-gradient(circle, #1a3c22, #000);
     z-index: 1000;
-    /* Fica acima de tudo */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -85,12 +86,11 @@ body {
     font-size: 0.8rem;
 }
 
-/* ANIMAÇÃO DE DISTRIBUIÇÃO DAS CARTAS (NOVO) */
+/* ANIMAÇÃO DE DISTRIBUIÇÃO */
 @keyframes dealCard {
     0% {
         opacity: 0;
         transform: translate(-150%, -200%) scale(0.5) rotate(-20deg);
-        /* Começa meio que da área do deck */
     }
 
     100% {
@@ -103,7 +103,7 @@ body {
     animation: dealCard 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
-/* --- RESTANTE DO CSS (Mesa, Cartas, etc) --- */
+/* --- MESA DE MADEIRA E FELTRO --- */
 .wood-rail {
     width: 100%;
     max-width: 500px;
@@ -164,6 +164,7 @@ body {
     transition: width 1s linear;
 }
 
+/* --- PLACAR --- */
 .scoreboard-glass {
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(5px);
@@ -276,6 +277,7 @@ body {
     background: var(--gold);
 }
 
+/* --- CARTAS --- */
 .card {
     width: var(--card-w);
     height: var(--card-h);
@@ -341,6 +343,7 @@ body {
     transform: rotate(180deg);
 }
 
+/* --- ÁREA DE JOGO --- */
 .game-surface {
     flex-grow: 1;
     display: flex;
@@ -465,6 +468,7 @@ body {
     animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
+/* --- CONTROLES --- */
 .action-bar {
     padding: 15px;
     display: flex;
@@ -518,6 +522,7 @@ body {
     margin-top: 20px;
 }
 
+/* --- MODAIS --- */
 .backdrop {
     position: fixed;
     top: 0;
@@ -620,6 +625,7 @@ body {
     display: none !important;
 }
 
+/* TELA RESULTADO */
 .result-card {
     display: flex;
     flex-direction: column;
@@ -644,6 +650,7 @@ body {
     line-height: 1;
 }
 
+/* --- RESPONSIVIDADE MOBILE (FIX) --- */
 @media (max-width: 480px) {
     :root {
         --card-w: 65px;
@@ -651,12 +658,19 @@ body {
     }
 
     .wood-rail {
-        padding: 5px;
+        padding: 0;
+        /* Remove borda de madeira para ganhar espaço */
         border-radius: 0;
     }
 
     .felt-table {
         border-radius: 0;
+    }
+
+    /* LEVANTAR OS BOTÕES */
+    .action-bar {
+        padding-bottom: 35px;
+        /* Empurra os botões para cima */
     }
 
     .card-center {
