@@ -9,7 +9,6 @@
     --gold-dim: #c5a000;
     --red: #d32f2f;
     --green: #2e7d32;
-    /* Tamanho padrão das cartas */
     --card-w: 85px;
     --card-h: 125px;
 }
@@ -31,7 +30,80 @@ body {
     overflow: hidden;
 }
 
-/* --- MESA DE MADEIRA E FELTRO --- */
+/* --- TELA INICIAL (NOVO) --- */
+.start-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, #1a3c22, #000);
+    z-index: 1000;
+    /* Fica acima de tudo */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.5s ease;
+}
+
+.start-content {
+    text-align: center;
+    color: white;
+    animation: slideUp 0.8s ease;
+}
+
+.logo-area h1 {
+    font-family: 'Rye', serif;
+    font-size: 3.5rem;
+    margin: 0;
+    text-shadow: 0 5px 15px rgba(0, 0, 0, 0.8);
+}
+
+.gold-text {
+    color: var(--gold);
+}
+
+.suit-decor {
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.2);
+    margin: 10px 0 40px 0;
+    letter-spacing: 15px;
+}
+
+.btn-start {
+    background: linear-gradient(to bottom, #ffd700, #ff8f00);
+    color: #3e2723;
+    padding: 20px 60px;
+    font-size: 1.5rem;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    animation: pulse 2s infinite;
+}
+
+.credits {
+    margin-top: 50px;
+    opacity: 0.3;
+    font-size: 0.8rem;
+}
+
+/* ANIMAÇÃO DE DISTRIBUIÇÃO DAS CARTAS (NOVO) */
+@keyframes dealCard {
+    0% {
+        opacity: 0;
+        transform: translate(-150%, -200%) scale(0.5) rotate(-20deg);
+        /* Começa meio que da área do deck */
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+}
+
+.deal-animation {
+    animation: dealCard 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* --- RESTANTE DO CSS (Mesa, Cartas, etc) --- */
 .wood-rail {
     width: 100%;
     max-width: 500px;
@@ -43,7 +115,6 @@ body {
     box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
     position: relative;
     display: flex;
-    /* Garante alinhamento */
     flex-direction: column;
 }
 
@@ -61,7 +132,6 @@ body {
     overflow: hidden;
 }
 
-/* --- BARRA DE TEMPO (TIMER) --- */
 .timer-rail {
     width: 100%;
     height: 6px;
@@ -94,7 +164,6 @@ body {
     transition: width 1s linear;
 }
 
-/* --- PLACAR --- */
 .scoreboard-glass {
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(5px);
@@ -207,7 +276,6 @@ body {
     background: var(--gold);
 }
 
-/* --- CARTAS --- */
 .card {
     width: var(--card-w);
     height: var(--card-h);
@@ -273,7 +341,6 @@ body {
     transform: rotate(180deg);
 }
 
-/* --- GAME AREA --- */
 .game-surface {
     flex-grow: 1;
     display: flex;
@@ -398,7 +465,6 @@ body {
     animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-/* --- CONTROLES --- */
 .action-bar {
     padding: 15px;
     display: flex;
@@ -452,7 +518,6 @@ body {
     margin-top: 20px;
 }
 
-/* --- MODAIS GERAIS --- */
 .backdrop {
     position: fixed;
     top: 0;
@@ -555,7 +620,6 @@ body {
     display: none !important;
 }
 
-/* --- CORREÇÃO TELA FINAL (DERROTA/VITÓRIA) --- */
 .result-card {
     display: flex;
     flex-direction: column;
@@ -580,19 +644,15 @@ body {
     line-height: 1;
 }
 
-/* --- MEDIA QUERY: RESPONSIVIDADE PARA CELULARES --- */
 @media (max-width: 480px) {
     :root {
-        /* Reduz tamanho das cartas em telas pequenas */
         --card-w: 65px;
         --card-h: 95px;
     }
 
     .wood-rail {
         padding: 5px;
-        /* Menos borda de madeira */
         border-radius: 0;
-        /* Remove canto arredondado em tela cheia */
     }
 
     .felt-table {
@@ -611,9 +671,6 @@ body {
         gap: 15px;
     }
 
-    /* Aproxima os slots */
-
-    /* Ajusta layout do placar */
     .scoreboard-glass {
         padding: 5px 10px;
         margin: 5px;
@@ -629,14 +686,16 @@ body {
         font-size: 1rem;
     }
 
-    /* Botões menores */
     .btn-3d {
         padding: 12px 0;
         font-size: 1rem;
     }
+
+    .logo-area h1 {
+        font-size: 2.5rem;
+    }
 }
 
-/* ANIMAÇÕES */
 @keyframes popIn {
     from {
         transform: translate(-50%, -50%) scale(0.5);
@@ -668,5 +727,19 @@ body {
 
     to {
         transform: translateY(-10px);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
     }
 }

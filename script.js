@@ -1,23 +1,16 @@
 /**
- * TRUCO ROYAL EDITION - FINAL STABLE
- * Regra implementada: Quem pediu o Truco/Aumento não pode pedir o próximo.
+ * TRUCO ROYAL EDITION - FINAL (COM TELA INICIAL E ANIMAÇÃO)
  */
 
 const RANKS = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
 const SUITS = ['♦', '♠', '♥', '♣'];
 const SUIT_POWER = { '♦': 0, '♠': 1, '♥': 2, '♣': 3 };
-
-// Configurações
 const TURN_TIME = 15;
 const AI_DELAY_MIN = 1000;
 const AI_DELAY_MAX = 3000;
 
-/* ================= CLASSE CARTA ================= */
 class Card {
-    constructor(rank, suit) {
-        this.rank = rank;
-        this.suit = suit;
-    }
+    constructor(rank, suit) { this.rank = rank; this.suit = suit; }
     getPower(viraRank) {
         const viraIndex = RANKS.indexOf(viraRank);
         const manilhaIndex = (viraIndex + 1) % RANKS.length;
@@ -30,7 +23,6 @@ class Card {
     }
 }
 
-/* ================= CLASSE BARALHO ================= */
 class Deck {
     constructor() { this.cards = []; this.reset(); }
     reset() {
@@ -43,7 +35,6 @@ class Deck {
     drawOne() { return this.cards.pop(); }
 }
 
-/* ================= CLASSE UI ================= */
 class UI {
     constructor(gameInstance) {
         this.game = gameInstance;
@@ -68,7 +59,8 @@ class UI {
         return el;
     }
 
-    renderHand(who, hand, vira = null, isBlind = false) {
+    // MODIFICADO: Suporte para animação de deal
+    renderHand(who, hand, vira = null, isBlind = false, animate = false) {
         const area = document.getElementById(who === 'player' ? 'handPlayer' : 'handCPU');
         area.innerHTML = '';
         hand.forEach((card, idx) => {
@@ -76,14 +68,28 @@ class UI {
             const isFaceUp = who === 'player';
             const el = this.createCardEl(card, isManilha, isFaceUp,
                 (who === 'player') ? () => this.game.playerPlayCard(idx) : null, isBlind);
+
+            // Lógica de Animação
+            if (animate) {
+                el.style.opacity = '0'; // Começa invisível
+                el.classList.add('deal-animation');
+                el.style.animationDelay = `${idx * 0.2}s`; // Escalonado
+            }
+
             area.appendChild(el);
         });
     }
 
-    renderVira(card) {
+    renderVira(card, animate = false) {
         const area = document.getElementById('cardVira');
         area.innerHTML = '';
-        area.appendChild(this.createCardEl(card, false, true));
+        const el = this.createCardEl(card, false, true);
+        if (animate) {
+            el.style.opacity = '0';
+            el.classList.add('deal-animation');
+            el.style.animationDelay = '0.6s'; // A vira aparece por último
+        }
+        area.appendChild(el);
     }
 
     playCardAnimation(who, card, vira) {
@@ -104,11 +110,8 @@ class UI {
     highlightTurn(who) {
         const pArea = document.getElementById('handPlayer');
         const cArea = document.getElementById('handCPU');
-        if (who === 'player') {
-            pArea.style.opacity = '1'; cArea.style.opacity = '0.6';
-        } else {
-            pArea.style.opacity = '0.6'; cArea.style.opacity = '1';
-        }
+        if (who === 'player') { pArea.style.opacity = '1'; cArea.style.opacity = '0.6'; }
+        else { pArea.style.opacity = '0.6'; cArea.style.opacity = '1'; }
         this.updateTrucoBtn(who);
     }
 
@@ -127,40 +130,23 @@ class UI {
         this.stopTimer();
     }
 
-    updateRoundValue(val) {
-        document.getElementById('valRodada').innerText = val;
-    }
+    updateRoundValue(val) { document.getElementById('valRodada').innerText = val; }
 
     updateTrucoBtn(turn) {
         const btn = document.getElementById('btnTruco');
-
-        // Texto do botão
         const nextVal = this.game.getNextVal();
         let label = "TRUCO";
         if (this.game.state.roundValue === 3) label = "PEDIR 6";
         if (this.game.state.roundValue === 6) label = "PEDIR 9";
         if (this.game.state.roundValue === 9) label = "PEDIR 12";
-
         btn.innerHTML = `${label} <i class="fas fa-bolt"></i>`;
 
-        // === LÓGICA DE BLOQUEIO DO BOTÃO ===
         let disabled = false;
-
-        // 1. Se não é vez do player
         if (turn === 'cpu') disabled = true;
-
-        // 2. Se já vale 12 (máximo)
         if (this.game.state.roundValue >= 12) disabled = true;
-
-        // 3. Se um truco já está pendente
         if (this.game.state.isTrucoActive) disabled = true;
-
-        // 4. Se é Mão de Ferro ou Mão de 11
         if (this.game.state.isIronHand || this.game.state.scorePlayer === 11 || this.game.state.scoreCPU === 11) disabled = true;
-
-        // 5. REGRA DE OURO: Se o Player foi o último a pedir, ele NÃO pode pedir de novo.
         if (this.game.state.lastRaiser === 'player') disabled = true;
-
         btn.disabled = disabled;
     }
 
@@ -181,15 +167,12 @@ class UI {
         setTimeout(() => el.classList.add('hidden'), 2500);
     }
 
-    // --- TIMER SYSTEM ---
     startTimer(seconds, onTimeout, barId = 'timerBar') {
         this.stopTimer();
         const bar = document.getElementById(barId);
         if (!bar) return;
-
         let timeLeft = seconds;
         bar.style.width = '100%';
-
         this.timerInterval = setInterval(() => {
             timeLeft--;
             const pct = (timeLeft / seconds) * 100;
@@ -209,21 +192,17 @@ class UI {
         });
     }
 
-    // Modais
     showTrucoModal(val, callback) {
         const modal = document.getElementById('modalOverlay');
         document.getElementById('modalVal').innerText = val;
         modal.classList.remove('hidden');
-
         const btnRaise = document.getElementById('mdlAumentar');
-        if (val >= 12) {
-            btnRaise.style.display = 'none';
-        } else {
+        if (val >= 12) btnRaise.style.display = 'none';
+        else {
             btnRaise.style.display = 'block';
             let next = val === 3 ? 6 : (val === 6 ? 9 : 12);
             btnRaise.innerText = `PEDIR ${next}`;
         }
-
         const close = (action) => {
             modal.classList.add('hidden');
             this.stopTimer();
@@ -232,14 +211,12 @@ class UI {
         document.getElementById('mdlAceitar').onclick = () => close('accept');
         document.getElementById('mdlAumentar').onclick = () => close('raise');
         document.getElementById('mdlCorrer').onclick = () => close('fold');
-
         this.startTimer(12, () => close('fold'), 'modalTimerBar');
     }
 
     showHandOf11Modal(callback) {
         const modal = document.getElementById('modalMao11');
         modal.classList.remove('hidden');
-
         const close = (action) => {
             modal.classList.add('hidden');
             this.stopTimer();
@@ -259,7 +236,6 @@ class UI {
     }
 }
 
-/* ================= CLASSE JOGO ================= */
 class Game {
     constructor() {
         this.deck = new Deck();
@@ -270,9 +246,22 @@ class Game {
             tableCardPlayer: null, tableCardCPU: null,
             roundHistory: [], turn: 'player', starter: 'player',
             isTrucoActive: false, waitingResponse: false, isIronHand: false,
-            lastRaiser: null // 'player' ou 'cpu' ou null
+            lastRaiser: null
         };
         this.initButtons();
+    }
+
+    initButtons() {
+        // Botão da Tela Inicial
+        document.getElementById('btnStartGame').onclick = () => {
+            document.getElementById('startScreen').classList.add('hidden');
+            this.startRound(); // Começa o jogo aqui
+        };
+
+        document.getElementById('btnTruco').onclick = () => {
+            if (this.state.turn === 'player' && !this.state.waitingResponse) this.callTruco('player');
+        };
+        document.getElementById('btnCorrer').onclick = () => this.fold();
     }
 
     startMatch() {
@@ -280,7 +269,7 @@ class Game {
         this.state.scoreCPU = 0;
         this.state.starter = 'player';
         this.ui.updateScore(0, 0);
-        this.startRound();
+        // Não chama startRound() direto, espera o botão da tela inicial
     }
 
     startRound() {
@@ -292,7 +281,7 @@ class Game {
         this.state.isTrucoActive = false;
         this.state.waitingResponse = false;
         this.state.isIronHand = false;
-        this.state.lastRaiser = null; // Reseta quem pediu truco
+        this.state.lastRaiser = null;
 
         this.deck.reset();
         this.state.handPlayer = this.deck.deal(3);
@@ -300,8 +289,24 @@ class Game {
         this.state.vira = this.deck.drawOne();
 
         this.ui.resetRoundUI(1);
-        this.ui.renderVira(this.state.vira);
 
+        // --- AQUI ESTÁ A LÓGICA DE DELAY PARA ANIMAÇÃO ---
+        // Renderiza com animação (true)
+        this.ui.renderVira(this.state.vira, true);
+        this.ui.renderHand('player', this.state.handPlayer, this.state.vira, false, true);
+        this.ui.renderHand('cpu', this.state.handCPU, null, false, true);
+
+        // Bloqueia qualquer ação durante a animação (1.5s)
+        this.state.waitingResponse = true;
+
+        setTimeout(() => {
+            this.state.waitingResponse = false;
+            this.checkSpecialHands(); // Verifica mão de ferro/11 após animar
+        }, 1500);
+    }
+
+    // Separei a verificação de mãos especiais para chamar após a animação
+    checkSpecialHands() {
         // Ferro
         if (this.state.scorePlayer === 11 && this.state.scoreCPU === 11) {
             this.state.isIronHand = true;
@@ -323,7 +328,7 @@ class Game {
                 if (decision === 'play') {
                     this.state.roundValue = 3;
                     this.ui.updateRoundValue(3);
-                    this.state.lastRaiser = 'locked'; // Ninguém pede truco
+                    this.state.lastRaiser = 'locked';
                     this.ui.showMessage("VALE 3 TENTOS!");
                     this.state.waitingResponse = false;
                     this.state.turn = this.state.starter;
@@ -341,7 +346,6 @@ class Game {
             this.ui.renderHand('player', this.state.handPlayer, this.state.vira, true);
             this.ui.renderHand('cpu', this.state.handCPU, null, false);
             this.state.waitingResponse = true;
-
             setTimeout(() => {
                 const cpuWantsToPlay = this.cpuDecideHandOf11();
                 if (cpuWantsToPlay) {
@@ -361,8 +365,7 @@ class Game {
             return;
         }
 
-        this.ui.renderHand('player', this.state.handPlayer, this.state.vira, false);
-        this.ui.renderHand('cpu', this.state.handCPU, null, false);
+        // Jogo Normal
         this.state.turn = this.state.starter;
         this.processTurn();
     }
@@ -378,8 +381,6 @@ class Game {
 
     processTurn() {
         this.ui.highlightTurn(this.state.turn);
-
-        // Inicia Timer
         this.ui.startTimer(TURN_TIME, () => {
             this.ui.showMessage("TEMPO ESGOTADO!");
             if (this.state.turn === 'player') this.finishRound('cpu');
@@ -416,12 +417,7 @@ class Game {
             return;
         }
 
-        // Tenta pedir Truco (Só se não foi ela mesma que aumentou por último)
-        if (!this.state.isTrucoActive &&
-            this.state.tableCardCPU === null &&
-            this.state.roundValue < 12 &&
-            this.state.lastRaiser !== 'cpu') { // IA Checa a regra de ouro
-
+        if (!this.state.isTrucoActive && this.state.tableCardCPU === null && this.state.roundValue < 12 && this.state.lastRaiser !== 'cpu') {
             const isHandOf11 = (this.state.scorePlayer === 11 || this.state.scoreCPU === 11);
             if (!isHandOf11 && this.shouldCpuTruco()) {
                 this.callTruco('cpu');
@@ -458,10 +454,8 @@ class Game {
             const pw = c.getPower(this.state.vira.rank);
             p += pw; if (pw >= 100) m = true;
         });
-
         let bluff = 0.15;
         if (this.state.scoreCPU < this.state.scorePlayer - 3) bluff = 0.35;
-
         return (p > 150 || m) || Math.random() < bluff;
     }
 
@@ -542,7 +536,6 @@ class Game {
         }
     }
 
-    // --- LÓGICA DE APOSTA ---
     getNextVal() {
         const v = this.state.roundValue;
         if (v === 1) return 3;
@@ -558,8 +551,6 @@ class Game {
         }
         if (this.state.roundValue >= 12) return;
         if (this.state.isTrucoActive) return;
-
-        // Regra de Ouro: Quem pediu não pode pedir de novo
         if (this.state.lastRaiser === who) {
             this.ui.showMessage("Você não pode aumentar!");
             return;
@@ -568,15 +559,12 @@ class Game {
         this.ui.stopTimer();
         this.state.isTrucoActive = true;
         this.state.waitingResponse = true;
-
-        // Define que este jogador é o "dono" da aposta atual
         this.state.lastRaiser = who;
-
         const nextVal = this.getNextVal();
 
         if (who === 'player') {
             this.ui.showMessage(`VOCÊ PEDIU ${nextVal}!`);
-            this.ui.updateTrucoBtn('player'); // Desabilita botão visualmente
+            this.ui.updateTrucoBtn('player');
             setTimeout(() => this.cpuTrucoResponse(nextVal), 1500);
         } else {
             this.ui.showMessage("CPU PEDINDO APOSTA...");
@@ -588,7 +576,6 @@ class Game {
 
     cpuTrucoResponse(val) {
         this.ui.showMessage("CPU Pensando...", "info");
-
         setTimeout(() => {
             try {
                 let p = 0;
@@ -597,49 +584,32 @@ class Game {
                 }
 
                 let accept = false; let raise = false;
-
-                // IA decide
                 if (p > 100) {
                     accept = true;
-                    // IA só pede 6/9/12 se tiver mão boa E não estiver no limite
                     if (val < 12 && Math.random() < 0.4) raise = true;
-                } else if (p > 50 && Math.random() < 0.5) {
-                    accept = true;
-                } else if (Math.random() < 0.15) {
-                    accept = true;
-                }
+                } else if (p > 50 && Math.random() < 0.5) accept = true;
+                else if (Math.random() < 0.15) accept = true;
 
                 if (raise) {
-                    // CPU decide AUMENTAR
                     const next = val === 3 ? 6 : (val === 6 ? 9 : 12);
-
                     this.state.roundValue = val;
                     this.ui.updateRoundValue(val);
                     this.state.isTrucoActive = false;
                     this.ui.showMessage("CPU AUMENTOU!");
-
-                    // Chama truco da CPU (que vai atualizar lastRaiser para 'cpu')
-                    setTimeout(() => {
-                        this.callTruco('cpu');
-                    }, 1000);
-
+                    setTimeout(() => { this.callTruco('cpu'); }, 1000);
                 } else if (accept) {
                     this.ui.showMessage("CPU ACEITOU!");
                     this.state.roundValue = val;
                     this.ui.updateRoundValue(val);
                     this.state.isTrucoActive = false;
                     this.state.waitingResponse = false;
-
-                    // lastRaiser continua sendo 'player', então player não pode pedir mais
                     this.ui.updateTrucoBtn(this.state.turn);
-
                     if (this.state.turn === 'cpu') this.processTurn();
                 } else {
                     this.ui.showMessage("CPU CORREU!");
                     this.finishRound('player');
                 }
             } catch (e) {
-                console.error("Erro IA:", e);
                 this.finishRound('player');
             }
         }, 2000);
@@ -647,28 +617,19 @@ class Game {
 
     handleModalResponse(action, val) {
         this.ui.stopTimer();
-
         if (action === 'accept') {
             this.state.roundValue = val;
             this.ui.updateRoundValue(val);
             this.state.isTrucoActive = false;
             this.state.waitingResponse = false;
-
-            // lastRaiser continua sendo 'cpu', player pode pedir mais depois
             this.ui.updateTrucoBtn(this.state.turn);
-
             if (this.state.turn === 'cpu') this.processTurn();
-
         } else if (action === 'raise') {
-            // Player AUMENTA (retruca)
             this.state.roundValue = val;
             this.ui.updateRoundValue(val);
             this.state.isTrucoActive = false;
             this.state.waitingResponse = false;
-
-            // Chama novo truco (vai setar lastRaiser = 'player')
             this.callTruco('player');
-
         } else {
             this.finishRound('cpu');
         }
@@ -677,13 +638,6 @@ class Game {
     fold() {
         if (this.state.waitingResponse) return;
         this.finishRound('cpu');
-    }
-
-    initButtons() {
-        document.getElementById('btnTruco').onclick = () => {
-            if (this.state.turn === 'player' && !this.state.waitingResponse) this.callTruco('player');
-        };
-        document.getElementById('btnCorrer').onclick = () => this.fold();
     }
 }
 
